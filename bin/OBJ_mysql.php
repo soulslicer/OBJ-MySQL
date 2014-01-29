@@ -211,6 +211,35 @@ Class OBJ_mysql{
     }
 
     /**
+     * Begins a transaction, by turning off auto commit
+     * @return true or false indicating success of transaction
+     */
+    function beginTransaction(){
+        if(mysqli_connect_errno($this->link)){
+            return FALSE;
+        }else{
+            mysqli_autocommit($this->link, FALSE);
+            return TRUE;
+        }
+    }
+
+    /**
+     * Ends a transaction and commits if no errors, then ends autocommit
+     * @return true or false indicating success of transactions
+     */
+    function endTransaction(){
+        if(!$this->errors()){
+            mysqli_commit($this->link);
+            mysqli_autocommit($this->link, TRUE);
+            return TRUE;
+        }else{
+            mysqli_rollback($this->link);
+            mysqli_autocommit($this->link, TRUE);
+            return FALSE;
+        }
+    }
+
+    /**
      * Creates and executes an insert statement
      * @param  string $table target table
      * @param  array  $data  data to insert
@@ -336,6 +365,33 @@ Class OBJ_mysql{
         }
 
         $sql = "DELETE FROM $table WHERE ($WHERE);";
+
+        return $this->query($sql);
+
+    }
+
+    /**
+     * Creates and executes a select statement
+     * @param  string $table the target table
+     * @param  string|array $where the where clause
+     * @return mixed Affected rows or null if the query failed
+     */
+    function select($table="",$where="1=1"){
+
+        if(strlen($table)==0){
+            $this->_displayError("invalid table name");
+            return false;
+        }
+
+        if(is_string($where)){
+            $WHERE = ($where);
+        }elseif(is_array($where)){
+            $WHERE = $this->_parseArrayPair($where,"AND");
+        }
+
+        $sql = "SELECT * FROM $table WHERE ($WHERE);";
+
+        //echo $sql;
 
         return $this->query($sql);
 
